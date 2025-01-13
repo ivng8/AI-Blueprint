@@ -90,17 +90,75 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    stack = util.Stack()
+    stack.push((problem.getStartState(), []))
+    visited = set()
+
+    while not stack.isEmpty():
+        curr_state, path = stack.pop()
+
+        if curr_state in visited:
+            continue
+
+        visited.add(curr_state)
+
+        if problem.isGoalState(curr_state):
+            return path
+        
+        for successor in problem.getSuccessors(curr_state):
+            if successor[0] not in visited:
+                stack.push((successor[0], path + [successor[1]]))
+
+    return []
 
 def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
     """Search the shallowest nodes in the search tree first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    queue = util.Queue()
+    queue.push((problem.getStartState(), []))
+    visited = set()
+
+    while not queue.isEmpty():
+        curr_state, path = queue.pop()
+
+        if curr_state in visited:
+            continue
+
+        visited.add(curr_state)
+
+        if problem.isGoalState(curr_state):
+            return path
+
+        for successor in problem.getSuccessors(curr_state):
+            if successor[0] not in visited:
+                queue.push((successor[0], path + [successor[1]]))
+
+    return []
 
 def uniformCostSearch(problem: SearchProblem) -> List[Directions]:
     """Search the node of least total cost first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    pq = util.PriorityQueue()
+    pq.push((problem.getStartState(), []), 0)
+    visited = set()
+
+    while not pq.isEmpty():
+        curr_state, path = pq.pop()
+
+        if curr_state in visited:
+            continue
+
+        visited.add(curr_state)
+
+        if problem.isGoalState(curr_state):
+            return path
+
+        for successor, action, cost in problem.getSuccessors(curr_state):
+            if successor not in visited:
+                new_cost = problem.getCostOfActions(path + [action])
+                pq.update((successor, path + [action]), new_cost)
+
+    return []
 
 def nullHeuristic(state, problem=None) -> float:
     """
