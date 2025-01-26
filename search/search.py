@@ -155,7 +155,7 @@ def uniformCostSearch(problem: SearchProblem) -> List[Directions]:
 
         for successor, action, cost in problem.getSuccessors(curr_state):
             if successor not in visited:
-                new_cost = problem.getCostOfActions(path + [action])
+                new_cost = problem.getCostOfActions(path) + cost
                 pq.update((successor, path + [action]), new_cost)
 
     return []
@@ -168,9 +168,27 @@ def nullHeuristic(state, problem=None) -> float:
     return 0
 
 def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directions]:
-    """Search the node that has the lowest combined cost and heuristic first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    pq = util.PriorityQueue()
+    pq.push((problem.getStartState(), [], 0), 0)
+    visited = {}
+
+    while not pq.isEmpty():
+        curr_state, path, curr_cost = pq.pop()
+
+        if curr_state in visited and visited[curr_state] <= curr_cost:
+            continue
+
+        visited[curr_state] = curr_cost
+
+        if problem.isGoalState(curr_state):
+            return path
+
+        for successor, action, cost in problem.getSuccessors(curr_state):
+            new_cost = curr_cost + cost
+            priority = new_cost + heuristic(successor, problem)
+            pq.push((successor, path + [action], new_cost), priority)
+
+    return []
 
 # Abbreviations
 bfs = breadthFirstSearch
