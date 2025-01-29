@@ -481,14 +481,12 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     "*** YOUR CODE HERE ***"
     foodList = foodGrid.asList()
 
-    # No food left; heuristic is 0
     if not foodList:
         return 0
 
-    # Compute the maximum maze distance between Pacman's position and any food
     maxDistance = 0
     for food in foodList:
-        distance = util.manhattanDistance(position, food)
+        distance = mazeDistance(position, food, problem.startingGameState)
         maxDistance = max(maxDistance, distance)
 
     return maxDistance
