@@ -149,7 +149,44 @@ class MinimaxAgent(MultiAgentSearchAgent):
         Returns whether or not the game state is a losing state
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        ghosts = gameState.getNumAgents() - 1
+        return self.maximize(gameState, 1, ghosts)
+    
+    def maximize(self, gameState, depth, ghosts):
+        if gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+        max = float("inf") * -1
+        ans = Directions.STOP
+        # Note: map each move into game state for pacman
+        for action in gameState.getLegalActions(0):
+            successor = gameState.generateSuccessor(0, action)
+            current = self.minimize(successor, depth, 1, ghosts)
+            if current > max:
+                max = current
+                ans = action
+        if depth > 1:
+            return max
+        
+        return ans
+            
+    def minimize(self, gameState, depth, agent, ghosts):
+        if gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+        mini = float("inf")
+        # Note: map each move into game state for current ghost
+        successors = [gameState.generateSuccessor(agent, action) for action in gameState.getLegalActions(agent)]
+        if agent == ghosts: # Note: if equal means that we are on the last ghost
+            if depth < self.depth: # Note: we have to go deeper at least one level
+                for successor in successors:
+                    mini = min(mini, self.maximize(successor, depth + 1, ghosts))
+            else: # Note: we have reach correct amount of layers
+                for successor in successors:
+                    mini = min(mini, self.evaluationFunction(successor))
+        else: # Note: means there are more ghosts to iterate
+            for successor in successors:
+                mini = min(mini, self.minimize(successor, depth, agent + 1, ghosts))
+
+        return mini
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
