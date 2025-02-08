@@ -74,12 +74,7 @@ class ReflexAgent(Agent):
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
-        score = successorGameState.getScore()
-
-        for ghost in newGhostStates:
-            distance = manhattanDistance(newPos, ghost.getPosition())
-            if ghost.scaredTimer == 0 and distance < 2:
-                score -= 10 / (distance + 1)
+        score = successorGameState.getScore()            
 
         foodList = newFood.asList()
         if foodList:
@@ -87,9 +82,11 @@ class ReflexAgent(Agent):
             score += 5 / (closest + 1)
 
         for ghost, scaredTime in zip(newGhostStates, newScaredTimes):
+            distance = manhattanDistance(newPos, ghost.getPosition())
             if scaredTime > 0:
-                distance = manhattanDistance(newPos, ghost.getPosition())
                 score += 5 / (distance + 1)
+            if ghost.scaredTimer == 0 and distance < 2:
+                score -= 10 / (distance + 1)
 
         return score
 
