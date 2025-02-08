@@ -212,7 +212,45 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         legal moves.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.expectimax(gameState, 1)
+    
+    def expectimax(self, gameState, depth):
+        if gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+        max = float("inf") * -1
+        ans = Directions.STOP
+        # Note: map each move into game state for pacman
+        for action in gameState.getLegalActions(0):
+            successor = gameState.generateSuccessor(0, action)
+            current = self.expected(successor, depth, 1)
+            if current > max:
+                max = current
+                ans = action
+        if depth > 1:
+            return max
+        
+        return ans
+    
+    def expected(self, gameState, depth, agent):
+        if gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+        
+        avg = 0.0
+        # Note: map each move into game state for current ghost and add expected value
+        successors = [gameState.generateSuccessor(agent, action) for action in gameState.getLegalActions(agent)]
+        moves = len(successors)
+        if agent == gameState.getNumAgents() - 1: # Note: if equal means that we are on the last ghost
+            if depth < self.depth: # Note: we have to go deeper at least one level
+                for successor in successors:
+                    avg += self.expectimax(successor, depth + 1) / moves
+            else: # Note: we have reach correct amount of layers
+                for successor in successors:
+                    avg += self.evaluationFunction(successor) / moves
+        else: # Note: means there are more ghosts to iterate
+            for successor in successors:
+                avg += self.expected(successor, depth, agent + 1) / moves
+
+        return avg
 
 def betterEvaluationFunction(currentGameState: GameState):
     """
@@ -220,9 +258,38 @@ def betterEvaluationFunction(currentGameState: GameState):
     evaluation function (question 5).
 
     DESCRIPTION: <write something here so we know what you did>
+    Similar to the evaluation function I made in the Reflex Agent from question 1
+    I plan to leverage the score with the distance from food and ghosts. I also 
+    added some consideration to the power pellets in order to conserve them. For 
+    the ghosts I needed to change it so that the score goes down when ghosts
+    are close but also aren't scared since these aren't of threat to pac man. After
+    some trial and error I want to include the number of food left on the screen
+    as a negative drawback to stop the pacman from deciding that STOP is the
+    optimal move at the current state.
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    curr = currentGameState.getPacmanPosition()
+    food = currentGameState.getFood()
+    ghosts = currentGameState.getGhostStates()
+    power = currentGameState.getCapsules()
+    times = [ghostState.scaredTimer for ghostState in ghosts]
 
+    score = currentGameState.getScore()           
+
+    foodList = food.asList()
+    if foodList:
+        closest = min(manhattanDistance(curr, pos) for pos in foodList)
+        score += 5 / (closest + 1)
+
+    closest_ghost = float("inf")
+    ghost_score = 0
+    for ghost, scaredTime in zip(ghosts, times):
+        distance = manhattanDistance(curr, ghost.getPosition())
+        if scaredTime == 0:
+            closest_ghost = min(closest_ghost, distance)
+        if scaredTime > distance:
+            ghost_score += 50 - distance
+
+    return score - 5 * len(foodList) + 5 * len(power) + ghost_score
 # Abbreviation
 better = betterEvaluationFunction
