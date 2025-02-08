@@ -74,33 +74,24 @@ class ReflexAgent(Agent):
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
-        # Initialize weights for evaluation factors
-        scoreWeight = 1.0
-        ghostPenaltyWeight = 10.0
-        foodRewardWeight = 5.0
+        score = successorGameState.getScore()
 
-        # Game score as baseline
-        evaluationScore = scoreWeight * successorGameState.getScore()
+        for ghost in newGhostStates:
+            distance = manhattanDistance(newPos, ghost.getPosition())
+            if ghost.scaredTimer == 0 and distance < 2:
+                score -= 10 / (distance + 1)
 
-        # Ghost penalty: avoid non-scared ghosts
-        for ghostState in newGhostStates:
-            ghostDistance = manhattanDistance(newPos, ghostState.getPosition())
-            if ghostState.scaredTimer == 0 and ghostDistance < 2:  # Dangerously close
-                evaluationScore -= ghostPenaltyWeight / (ghostDistance + 1)
-
-        # Reward proximity to food
         foodList = newFood.asList()
         if foodList:
-            closestFoodDistance = min(manhattanDistance(newPos, foodPos) for foodPos in foodList)
-            evaluationScore += foodRewardWeight / (closestFoodDistance + 1)
+            closest = min(manhattanDistance(newPos, pos) for pos in foodList)
+            score += 5 / (closest + 1)
 
-        # Consider scared ghost bonuses
-        for ghostState, scaredTime in zip(newGhostStates, newScaredTimes):
-            if scaredTime > 0:  # Scared ghost available
-                ghostDistance = manhattanDistance(newPos, ghostState.getPosition())
-                evaluationScore += ghostPenaltyWeight / (ghostDistance + 1)
+        for ghost, scaredTime in zip(newGhostStates, newScaredTimes):
+            if scaredTime > 0:
+                distance = manhattanDistance(newPos, ghost.getPosition())
+                score += 5 / (distance + 1)
 
-        return evaluationScore
+        return score
 
 def scoreEvaluationFunction(currentGameState: GameState):
     """
