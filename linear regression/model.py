@@ -49,19 +49,17 @@ class PolynomialRegressionModel(Model):
         return self.weights
 
     def hypothesis(self, x):
-        curr = 0
-        for w, f in zip(self.weights, self.get_features(x)):
-            curr += w * f
-        return curr
+        return np.dot(self.get_weights(), self.get_features(x))
 
     def predict(self, x):
         return self.hypothesis(x)
 
     def loss(self, x, y):
-        return 0.5 * (self.hypothesis(x) - y) ** 2
+        se = (self.predict(x) - y) ** 2
+        return 0.5 * np.mean(se)
 
     def gradient(self, x, y):
-        err = self.hypothesis(x) - y
+        err = self.predict(x) - y
         return [err * f for f in self.get_features(x)]
 
     def train(self, dataset, evalset = None):
@@ -134,33 +132,110 @@ class BinaryLogisticRegressionModel(Model):
     """
 
     def __init__(self, num_features, learning_rate = 1e-2):
-        "*** YOUR CODE HERE ***"
+        self.learning_rate = learning_rate
+        self.bias = 0
+        self.weights = [0] * num_features
 
     def get_features(self, x):
-        "*** YOUR CODE HERE ***"
+        features = []
+        for i in x:
+            features.extend(i)
+        return features
 
     def get_weights(self):
-        "*** YOUR CODE HERE ***"
+        return self.weights, self.bias
 
     def hypothesis(self, x):
-        "*** YOUR CODE HERE ***"
+        weights, bias = self.get_weights()
+        features = self.get_features(x)
+        exp = np.dot(weights, features) + bias
+        return 1.0 / (1.0 + math.exp(-1 * exp))
 
     def predict(self, x):
-        "*** YOUR CODE HERE ***"
+        if self.hypothesis(x) < 0.5:
+            return 0
+        else:
+            return 1
 
     def loss(self, x, y):
-        "*** YOUR CODE HERE ***"
+        h = self.hypothesis(x)
+        # Prevent log(0) errors
+        epsilon = 1e-15
+        h = max(epsilon, min(1 - epsilon, h))
+        
+        # Cross-entropy loss
+        if y == 1:
+            return -math.log(h)
+        else:  # y == 0
+            return -math.log(1 - h)
 
     def gradient(self, x, y):
-        "*** YOUR CODE HERE ***"
+        features = self.get_features(x)
+        h = self.hypothesis(x)
+        error = h - y  # Difference between prediction and actual label
+        
+        # Gradient for each weight
+        grad_weights = [error * feature for feature in features]
+        grad_bias = error
+
+        return grad_weights, grad_bias
 
     def train(self, dataset, evalset = None):
-        "*** YOUR CODE HERE ***"
+        train_losses = []
+        eval_iters = []
+        accuracies = []
+        
+        for j in range(12000):
+            # Shuffle the dataset for each epoch
+            np.random.shuffle(dataset)
+            
+            # Track total loss for this epoch
+            total_loss = 0
+            
+            for x, y in dataset:
+                # Compute loss for this sample
+                loss_value = self.loss(x, y)
+                total_loss += loss_value
+                
+                # Compute gradients
+                grads = self.gradient(x, y)
+                
+                # Update weights using gradient descent
+                for i in range(self.num_features):
+                    self.weights[i] -= self.learning_rate * grads['weights'][i]
+                
+                # Update bias
+                self.bias -= self.learning_rate * grads['bias']
+            
+            # Record average loss for this epoch
+            avg_loss = total_loss / len(dataset)
+            train_losses.append(avg_loss)
+            
+            # Evaluate on evalset if provided
+            if evalset:
+                correct = 0
+                for x, y in evalset:
+                    pred = self.predict(x)
+                    if pred == y:
+                        correct += 1
+                accuracy = correct / len(evalset)
+                accuracies.append(accuracy)
+                eval_iters.append(j)
+        
+        return train_losses, eval_iters, accuracies
 
 
 # PA4 Q4
 def binary_classification():
-    "*** YOUR CODE HERE ***"
+    train_data = util.get_dataset("mnist_binary_train")
+    test_data = util.get_dataset("mnist_binary_test")
+
+    model = BinaryLogisticRegressionModel(num_features=784, learning_rate=0.01)
+
+    train_accuracies, eval_iterations, accuracies = model.train(train_data, test_data)
+
+    train_data.plot_accuracy_curve(eval_iterations, train_accuracies)
+    test_data.plot_accuracy_curve(eval_iterations, accuracies)
 
 
 # PA4 Q5
