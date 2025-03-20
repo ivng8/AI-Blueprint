@@ -38,38 +38,91 @@ class PolynomialRegressionModel(Model):
     """
 
     def __init__(self, degree = 1, learning_rate = 1e-3):
-        "*** YOUR CODE HERE ***"
+        self.degree = degree
+        self.learning_rate = learning_rate
+        self.weights = [1] + [0] * (degree)
  
     def get_features(self, x):
-        "*** YOUR CODE HERE ***"
+        return [x**i for i in range(self.degree + 1)]
 
     def get_weights(self):
-        "*** YOUR CODE HERE ***"
+        return self.weights
 
     def hypothesis(self, x):
-        "*** YOUR CODE HERE ***"
+        curr = 0
+        for w, f in zip(self.weights, self.get_features(x)):
+            curr += w * f
+        return curr
 
     def predict(self, x):
         return self.hypothesis(x)
 
     def loss(self, x, y):
-        "*** YOUR CODE HERE ***"
+        return 0.5 * (self.hypothesis(x) - y) ** 2
 
     def gradient(self, x, y):
-        "*** YOUR CODE HERE ***"
+        err = self.hypothesis(x) - y
+        return [err * f for f in self.get_features(x)]
 
     def train(self, dataset, evalset = None):
-        "*** YOUR CODE HERE ***"
+        xs, ys = dataset.get_all_samples()
+        eval_iters = []
+        losses = []
+        for i in range(10000):
+            total_loss = 0
+            for j in range(dataset.get_size()):
+                x, y = xs[j], ys[j]
+                delta_g = self.gradient(x, y)
+                self.weights = [w - self.learning_rate * g for w, g in zip(self.weights, delta_g)]
+                total_loss += self.loss(x, y)
+
+            avg_loss = total_loss / dataset.get_size()
+
+            if i % 50 == 0:
+                eval_iters.append(i)
+                losses.append(avg_loss)
+
+        return eval_iters, losses
 
 
 # PA4 Q2
 def linear_regression():
-    "*** YOUR CODE HERE ***"
-    # Examples
-    # sine_train = util.get_dataset("sine_train")
-    # sine_val = util.get_dataset("sine_val")
-    # sine_model = PolynomialRegressionModel()
-    # sine_model.train(sine_train)
+    sine_train = util.get_dataset("sine_train")
+    sine_val = util.get_dataset("sine_val")
+
+    sine_model = PolynomialRegressionModel(1, 1e-4)
+    eval_iters, losses = sine_model.train(sine_train)
+
+    print("Final hypothesis:", sine_model.get_weights())
+    train_loss = sine_train.compute_average_loss(sine_model)
+    print("Average training loss:", train_loss)
+
+    util.RegressionDataset.plot_data(sine_train, sine_model)
+    sine_train.plot_loss_curve(eval_iters, losses)
+
+    best_degree, best_lr, best_loss = 0, 0, float('inf')
+    for degree in range(1, 3):
+        for lr in range(-12, -3):
+            model = PolynomialRegressionModel(degree, 10**lr)
+            model.train(sine_train)
+
+            train_loss = sine_train.compute_average_loss(model)
+            print("Parameters:", degree, ", 1e", lr, " train loss:", train_loss)
+            val_loss = sine_val.compute_average_loss(model)
+            print("Parameters:", degree, ", 1e", lr, " val loss:", val_loss)
+
+            if val_loss < best_loss:
+                best_loss = val_loss
+                best_degree = degree
+                best_lr = lr
+
+    print("Best Parameters:", degree, ',', lr)
+    print("Best validation loss:", best_loss)
+
+    best_model = PolynomialRegressionModel(best_degree, 10**best_lr)
+    best_model.train(sine_train)
+
+    util.RegressionDataset.plot_data(sine_train, best_model)
 
 
 # PA4 Q3
