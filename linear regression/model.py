@@ -247,16 +247,18 @@ class MultiLogisticRegressionModel(Model):
     """
 
     def __init__(self, num_features, num_classes, learning_rate = 1e-2):
-        "*** YOUR CODE HERE ***"
+        self.learning_rate = learning_rate
+        self.weights = np.zeros((num_classes, num_features + 1))
 
     def get_features(self, x):
-        "*** YOUR CODE HERE ***"
+        return np.insert(np.array(x), 0, 1)
 
     def get_weights(self):
-        "*** YOUR CODE HERE ***"
+        return self.weights
 
     def hypothesis(self, x):
-        "*** YOUR CODE HERE ***"
+        features = self.get_features(x)
+        params = np.
 
     def predict(self, x):
         "*** YOUR CODE HERE ***"
@@ -278,7 +280,7 @@ def multi_classification():
 
 def main():
     # linear_regression()
-    binary_classification()
+    # binary_classification()
     multi_classification()
 
 if __name__ == "__main__":
