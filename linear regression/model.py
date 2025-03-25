@@ -67,18 +67,14 @@ class PolynomialRegressionModel(Model):
         eval_iters = []
         losses = []
         for i in range(10000):
-            total_loss = 0
             for j in range(dataset.get_size()):
                 x, y = xs[j], ys[j]
                 delta_g = self.gradient(x, y)
                 self.weights = [w - self.learning_rate * g for w, g in zip(self.weights, delta_g)]
-                total_loss += self.loss(x, y)
-
-            avg_loss = total_loss / dataset.get_size()
 
             if i % 50 == 0:
                 eval_iters.append(i)
-                losses.append(avg_loss)
+                losses.append(dataset.compute_average_loss(self))
 
         return eval_iters, losses
 
@@ -137,10 +133,7 @@ class BinaryLogisticRegressionModel(Model):
         self.weights = [0] * num_features
 
     def get_features(self, x):
-        features = []
-        for i in x:
-            features.extend(i)
-        return features
+        return np.array(x).flatten()
 
     def get_weights(self):
         return self.weights, self.bias
@@ -159,70 +152,47 @@ class BinaryLogisticRegressionModel(Model):
 
     def loss(self, x, y):
         h = self.hypothesis(x)
-        # Prevent log(0) errors
-        epsilon = 1e-15
-        h = max(epsilon, min(1 - epsilon, h))
-        
-        # Cross-entropy loss
         if y == 1:
-            return -math.log(h)
-        else:  # y == 0
-            return -math.log(1 - h)
+            return -1 * math.log(h)
+        else:
+            return -1 * math.log(1 - h)
 
     def gradient(self, x, y):
         features = self.get_features(x)
         h = self.hypothesis(x)
-        error = h - y  # Difference between prediction and actual label
+        e = h - y
         
-        # Gradient for each weight
-        grad_weights = [error * feature for feature in features]
-        grad_bias = error
+        weight_desc = [e * feature for feature in features]
+        bias_descent = e
 
-        return grad_weights, grad_bias
+        return weight_desc, bias_descent
 
     def train(self, dataset, evalset = None):
-        train_losses = []
+        train_acc = []
         eval_iters = []
-        accuracies = []
+        test_acc = []
+        xs, ys = dataset.get_all_samples()
         
-        for j in range(12000):
-            # Shuffle the dataset for each epoch
-            np.random.shuffle(dataset)
-            
-            # Track total loss for this epoch
-            total_loss = 0
-            
-            for x, y in dataset:
-                # Compute loss for this sample
-                loss_value = self.loss(x, y)
-                total_loss += loss_value
+        for j in range(500):
+
+            for i in range(len(xs)):
+                x, y = xs[i], ys[i]
                 
-                # Compute gradients
-                grads = self.gradient(x, y)
+                delta_g, delta_b = self.gradient(x, y)
                 
-                # Update weights using gradient descent
-                for i in range(self.num_features):
-                    self.weights[i] -= self.learning_rate * grads['weights'][i]
+                for k in range(len(self.weights)):
+                    self.weights[k] -= self.learning_rate * delta_g[k]
                 
-                # Update bias
-                self.bias -= self.learning_rate * grads['bias']
-            
-            # Record average loss for this epoch
-            avg_loss = total_loss / len(dataset)
-            train_losses.append(avg_loss)
-            
-            # Evaluate on evalset if provided
-            if evalset:
-                correct = 0
-                for x, y in evalset:
-                    pred = self.predict(x)
-                    if pred == y:
-                        correct += 1
-                accuracy = correct / len(evalset)
-                accuracies.append(accuracy)
+                self.bias -= self.learning_rate * delta_b
+
+            if j % 50 == 0:
+                train_acc.append(dataset.compute_average_accuracy(self))
                 eval_iters.append(j)
+                
+                if evalset:
+                    test_acc.append(evalset.compute_average_accuracy(self))
         
-        return train_losses, eval_iters, accuracies
+        return train_acc, eval_iters, test_acc
 
 
 # PA4 Q4
@@ -232,10 +202,39 @@ def binary_classification():
 
     model = BinaryLogisticRegressionModel(num_features=784, learning_rate=0.01)
 
-    train_accuracies, eval_iterations, accuracies = model.train(train_data, test_data)
+    train_acc, eval_iters, test_acc = model.train(train_data, test_data)
 
-    train_data.plot_accuracy_curve(eval_iterations, train_accuracies)
-    test_data.plot_accuracy_curve(eval_iterations, accuracies)
+    train_data.plot_accuracy_curve(eval_iters, train_acc)
+    test_data.plot_accuracy_curve(eval_iters, test_acc)
+
+    test_data.plot_confusion_matrix(model)
+    weights, bias = model.get_weights()
+    test_data.plot_image(weights)
+    """
+    C) We can interpret the learned model using the image by being able to tell
+    which pixels contribute to identifying 7 and which pixels contribute to
+    identifying 9 depending on how hot or cool they are. This makes sense 
+    because you can see the outer upper pixels as neutral since these aren't 
+    indicative of either 7 or 9 and you can sort of see how the curved slant of 9
+    are bright and the straighter lines are more cool.
+    """
+    acc = 0
+    index = 0
+    while acc < 11 and index < test_data.get_size():
+        pred = model.predict(test_data.xs[index])
+        actual = test_data.ys[index]
+        if pred != actual:
+            test_data.plot_image(test_data.xs[index])
+            acc += 1
+        index += 1
+    """
+    D) Based on the images of the errored predictions, the model most likely made
+    errors on these cases because it didn't take into account the image being slanted
+    or a little blurred. The model fails to capture spatial relationships between the
+    pixels or in other words possible euclidean transformations of the figure such
+    as rotations. A possible feature that could be added would be using pixel neighbors
+    to make small images to give the model more context of the pixels.
+    """
 
 
 # PA4 Q5
@@ -278,7 +277,7 @@ def multi_classification():
 
 
 def main():
-    linear_regression()
+    # linear_regression()
     binary_classification()
     multi_classification()
 
