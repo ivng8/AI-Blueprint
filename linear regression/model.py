@@ -297,8 +297,8 @@ class MultiLogisticRegressionModel(Model):
                 x, y = xs[i], ys[i]
                 delta_g = self.gradient(x, y)
 
-                for k in len(self.get_weights()):
-                    for m in len(self.get_weights()[0]):
+                for k in range(len(self.get_weights())):
+                    for m in range(len(self.get_weights()[0])):
                         self.get_weights[k][m] -= self.learning_rate * delta_g[k][m]
 
             if j % 25 == 0:
