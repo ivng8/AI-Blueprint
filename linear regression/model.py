@@ -299,7 +299,7 @@ class MultiLogisticRegressionModel(Model):
 
                 for k in range(len(self.get_weights())):
                     for m in range(len(self.get_weights()[0])):
-                        self.get_weights[k][m] -= self.learning_rate * delta_g[k][m]
+                        self.get_weights()[k][m] -= self.learning_rate * delta_g[k][m]
 
             if j % 25 == 0:
                 train_acc.append(dataset.compute_average_accuracy(self))
