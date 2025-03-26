@@ -258,19 +258,45 @@ class MultiLogisticRegressionModel(Model):
 
     def hypothesis(self, x):
         features = self.get_features(x)
-        params = np.
+        preds = []
+        ans = []
+        for i in range(len(self.get_weights())):
+            preds.append(np.dot(features, self.get_weights()[i]))
+        for j in range(len(preds)):
+            ans.append(float(preds[j] / sum(preds)))
+        return ans
 
     def predict(self, x):
-        "*** YOUR CODE HERE ***"
+        return np.argmax(self.hypothesis(x)) + 1
 
     def loss(self, x, y):
-        "*** YOUR CODE HERE ***"
+        return -1 * math.log(self.hypothesis(x)[y - 1])
 
     def gradient(self, x, y):
-        "*** YOUR CODE HERE ***"
+        features = self.get_features(x)
+        weights = self.get_weights()
+        ans = []
+        for i in range(len(weights)):
+            curr = []
+            indicator = 0
+            if y == i + 1:
+                indicator = 1
+            for j in range(len(features)):
+                curr.append((indicator - self.hypothesis(x)[i]) * weights[i][j])
+            ans.append(curr)
+        return ans
 
     def train(self, dataset, evalset = None):
-        "*** YOUR CODE HERE ***"
+        xs, ys = dataset.get_all_samples()
+
+        for j in range(200):
+            for i in range(1000):
+                x, y = xs[i], ys[i]
+                delta_g = self.gradient(x, y)
+
+                for k in len(self.get_weights()):
+                    for m in len(self.get_weights()[0]):
+                        self.get_weights[k][m] -= self.learning_rate * delta_g[k][m]
 
 
 # PA4 Q6
