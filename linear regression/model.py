@@ -287,6 +287,9 @@ class MultiLogisticRegressionModel(Model):
         return ans
 
     def train(self, dataset, evalset = None):
+        train_acc = []
+        eval_iters = []
+        test_acc = []
         xs, ys = dataset.get_all_samples()
 
         for j in range(200):
@@ -298,10 +301,31 @@ class MultiLogisticRegressionModel(Model):
                     for m in len(self.get_weights()[0]):
                         self.get_weights[k][m] -= self.learning_rate * delta_g[k][m]
 
+            if j % 25 == 0:
+                train_acc.append(dataset.compute_average_accuracy(self))
+                eval_iters.append(j)
+                
+                if evalset:
+                    test_acc.append(evalset.compute_average_accuracy(self))
+        
+        return train_acc, eval_iters, test_acc
+
 
 # PA4 Q6
 def multi_classification():
-    "*** YOUR CODE HERE ***"
+    train_data = util.get_dataset("mnist_binary_train")
+    test_data = util.get_dataset("mnist_binary_test")
+
+    model = MultiLogisticRegressionModel(num_features=784, num_classes=10, learning_rate=0.01)
+
+    train_acc, eval_iters, test_acc = model.train(train_data, test_data)
+
+    train_data.plot_accuracy_curve(eval_iters, train_acc)
+    test_data.plot_accuracy_curve(eval_iters, test_acc)
+
+    test_data.plot_confusion_matrix(model)
+    weights = model.get_weights()
+    test_data.plot_image(weights)
 
 
 def main():
