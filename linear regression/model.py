@@ -263,7 +263,7 @@ class MultiLogisticRegressionModel(Model):
         preds = []
         ans = []
         for i in range(len(weights)):
-            preds.append(np.dot(features, weights[i]) + bias[i])
+            preds.append(math.exp(np.dot(features, weights[i]) + bias[i]))
         for j in range(len(preds)):
             ans.append(float(preds[j] / sum(preds)))
         return ans
@@ -299,12 +299,12 @@ class MultiLogisticRegressionModel(Model):
 
         for j in range(100):
             print(j)
-            for i in range(1000):
+            for i in range(len(xs)):
                 x, y = xs[i], ys[i]
                 delta_w, delta_b = self.gradient(x, y)
 
-                for k in range(len(self.bias)):
-                    for m in range(len(self.weights[0])):
+                for k in range(len(self.weights)):
+                    for m in range(len(self.weights[k])):
                         self.weights[k][m] -= self.learning_rate * delta_w[k][m]
 
                     self.bias[k] -= self.learning_rate * delta_b[k]
@@ -327,6 +327,7 @@ def multi_classification():
     model = MultiLogisticRegressionModel(num_features=784, num_classes=10, learning_rate=0.01)
 
     train_acc, eval_iters, test_acc = model.train(train_data, test_data)
+    print(model.weights)
 
     train_data.plot_accuracy_curve(eval_iters, train_acc)
     test_data.plot_accuracy_curve(eval_iters, test_acc)
