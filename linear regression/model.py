@@ -248,20 +248,22 @@ class MultiLogisticRegressionModel(Model):
 
     def __init__(self, num_features, num_classes, learning_rate = 1e-2):
         self.learning_rate = learning_rate
-        self.weights = np.zeros((num_classes, num_features + 1))
+        self.bias = np.random.rand(num_classes) * 0.01
+        self.weights = np.random.randn(num_classes, num_features) * 0.01
 
     def get_features(self, x):
-        return np.insert(np.array(x), 0, 1)
+        return np.array(x).flatten()
 
     def get_weights(self):
-        return self.weights
+        return self.weights, self.bias
 
     def hypothesis(self, x):
         features = self.get_features(x)
+        weights, bias = self.get_weights()
         preds = []
         ans = []
-        for i in range(len(self.get_weights())):
-            preds.append(np.dot(features, self.get_weights()[i]))
+        for i in range(len(weights)):
+            preds.append(np.dot(features, weights[i]) + bias[i])
         for j in range(len(preds)):
             ans.append(float(preds[j] / sum(preds)))
         return ans
@@ -274,17 +276,20 @@ class MultiLogisticRegressionModel(Model):
 
     def gradient(self, x, y):
         features = self.get_features(x)
-        weights = self.get_weights()
-        ans = []
+        weights, bias = self.get_weights()
+        weight_desc = []
+        bias_desc = []
         for i in range(len(weights)):
             curr = []
             indicator = 0
             if y == i + 1:
                 indicator = 1
+            curr_h = self.hypothesis(x)[i]
             for j in range(len(features)):
-                curr.append((indicator - self.hypothesis(x)[i]) * weights[i][j])
-            ans.append(curr)
-        return ans
+                curr.append((indicator - curr_h) * weights[i][j])
+            weight_desc.append(curr)
+            bias_desc.append((indicator - curr_h) * bias[i])
+        return weight_desc, bias_desc
 
     def train(self, dataset, evalset = None):
         train_acc = []
@@ -292,16 +297,19 @@ class MultiLogisticRegressionModel(Model):
         test_acc = []
         xs, ys = dataset.get_all_samples()
 
-        for j in range(200):
+        for j in range(100):
+            print(j)
             for i in range(1000):
                 x, y = xs[i], ys[i]
-                delta_g = self.gradient(x, y)
+                delta_w, delta_b = self.gradient(x, y)
 
-                for k in range(len(self.get_weights())):
-                    for m in range(len(self.get_weights()[0])):
-                        self.get_weights()[k][m] -= self.learning_rate * delta_g[k][m]
+                for k in range(len(self.bias)):
+                    for m in range(len(self.weights[0])):
+                        self.weights[k][m] -= self.learning_rate * delta_w[k][m]
 
-            if j % 25 == 0:
+                    self.bias[k] -= self.learning_rate * delta_b[k]
+
+            if j % 2 == 0:
                 train_acc.append(dataset.compute_average_accuracy(self))
                 eval_iters.append(j)
                 
@@ -313,8 +321,8 @@ class MultiLogisticRegressionModel(Model):
 
 # PA4 Q6
 def multi_classification():
-    train_data = util.get_dataset("mnist_binary_train")
-    test_data = util.get_dataset("mnist_binary_test")
+    train_data = util.get_dataset("mnist_train")
+    test_data = util.get_dataset("mnist_test")
 
     model = MultiLogisticRegressionModel(num_features=784, num_classes=10, learning_rate=0.01)
 
