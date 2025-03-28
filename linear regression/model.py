@@ -245,7 +245,7 @@ class MultiLogisticRegressionModel(Model):
     def __init__(self, num_features, num_classes, learning_rate = 1e-2):
         self.learning_rate = learning_rate
         self.bias = np.zeros(num_classes)
-        self.weights = np.random.randn(num_classes, num_features) * np.sqrt(1 / num_features)
+        self.weights = np.random.randn(num_classes, num_features) * np.sqrt(2 / num_features)
 
     def get_features(self, x):
         return np.array(x).flatten()
@@ -318,7 +318,8 @@ def multi_classification():
 
     test_data.plot_confusion_matrix(model)
     weights, bias = model.get_weights()
-    test_data.plot_image(model.get_features(weights))
+    for i in range(len(weights)):
+        test_data.plot_image(weights[i])
 
 
 def main():
