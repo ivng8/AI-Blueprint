@@ -323,8 +323,8 @@ def multi_classification():
 
 
 def main():
-    # linear_regression()
-    # binary_classification()
+    linear_regression()
+    binary_classification()
     multi_classification()
 
 if __name__ == "__main__":
